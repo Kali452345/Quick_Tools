@@ -122,18 +122,19 @@ body {
     </button>
     <div class="dropdown-content">
       <a href="/pdftoword">Pdf to Word</a>
-      <a class="active" href="/wordtopdf">Word to Pdf</a>
-      <a href="/pdfmerge">Pdf Merge</a>
+      <a href="/wordtopdf">Word to Pdf</a>
+      <a class="active" href="/pdfmerge">Pdf Merge</a>
     </div>
     </div>
 
   </div>
 </div>
-<h1 style="text-align: center;">WORD TO PDF</h1>
-<form style="text-align: center;" action="/wordtopdf" method="post" enctype="multipart/form-data">
-  <label for="doc_upload">Upload Documents (docx):</label>
-  <input type="file" id="doc_upload" name="docxupload" accept="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-  <style>/* Basic button styling */
+<h1 style="text-align: center;">PDF Merge</h1>
+<body>
+<form style="text-align: center;" action="/pdfmerge" method="post" enctype="multipart/form-data">
+  <label for="doc_upload">Choose files to upload:</label>
+  <input type="file" id="doc_upload" name="files[]" accept="application/pdf" multiple>
+   <style>/* Basic button styling */
 .my-button {
   background-color: #007bff; /* Blue background */
   color: white; /* White text */
@@ -157,4 +158,6 @@ body {
 }</style>
   <input class="my-button" type="submit" value="Submit and Download">
 </form>
+
+</body>
 </html>

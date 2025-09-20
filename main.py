@@ -3,6 +3,7 @@ import uuid
 import logging
 from flask import Flask, render_template, request, abort, send_file
 from pdf2docx import Converter
+from pypdf import PdfWriter
 import subprocess
 import qrcode
 import io
@@ -118,6 +119,63 @@ def wordtopdf():
             as_attachment=True,
             download_name=pdf_name
         )
+# python
+from pypdf import PdfReader, PdfWriter
+
+@app.route('/pdfmerge', methods=['GET', 'POST'])
+def pdfmerge():
+    if request.method == 'GET':
+        return render_template('pdfmerge.html')
+
+    # Match the input name in `templates/pdfmerge.html`
+    files = [f for f in request.files.getlist('files[]') if f and f.filename]
+    if len(files) < 2:
+        abort(400, "Upload at least two PDF files")
+
+    # Optional: basic extension/mimetype checks
+    for f in files:
+        name = (f.filename or "").lower()
+        if not name.endswith(".pdf"):
+            abort(400, "Only .pdf files are allowed")
+
+    writer = PdfWriter()
+
+    try:
+        # Save and read in a single temp directory
+        with tempfile.TemporaryDirectory() as tmpdir:
+            saved_paths = []
+            for f in files:
+                safe_name = secure_filename(f.filename or "upload.pdf")
+                safe_name = f"{uuid.uuid4().hex}_{safe_name}"
+                pdf_path = os.path.join(tmpdir, safe_name)
+                f.save(pdf_path)
+                saved_paths.append(pdf_path)
+
+            # Read pages and add to writer
+            for pdf_path in saved_paths:
+                with open(pdf_path, "rb") as fh:
+                    reader = PdfReader(fh)
+                    for page in reader.pages:
+                        writer.add_page(page)
+
+            # Write merged PDF to memory
+            out_buf = io.BytesIO()
+            writer.write(out_buf)
+            out_buf.seek(0)
+
+    except Exception:
+        logging.exception("PDF merge failed")
+        abort(500, "Merge failed")
+
+    return send_file(
+        out_buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="merged.pdf",
+    )
+
+
+
 
 
 if __name__ == '__main__':
