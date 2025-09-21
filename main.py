@@ -32,12 +32,12 @@ def home():
             # Encode the image to base64 so it can be embedded in HTML
             qrcode_img = 'data:image/png;base64,' + base64.b64encode(img_bytes).decode('utf-8')
     # Step 8: Render the result (QR code image) in your template
-    return render_template('index.html', qrcode_img=qrcode_img)
+    return render_template('index.html', qrcode_img=qrcode_img, active_page='qr-gen')
 @app.route('/pdftoword', methods=['GET', 'POST'])  # Allow both GET (show form) and POST (handle upload)
 def pdftoword():
     if request.method == 'GET':
         # If the user visits the page, just show the upload form
-        return render_template('pdftoword.html')
+        return render_template('pdftoword.html', active_page='pdftoword')
 
     # If the request is POST (form submitted with file)
     if 'pdfupload' not in request.files:
@@ -79,7 +79,7 @@ def pdftoword():
 @app.route('/wordtopdf', methods=['GET', 'POST'])
 def wordtopdf():
     if request.method == 'GET':
-        return render_template('wordtopdf.html')
+        return render_template('wordtopdf.html', active_page='wordtopdf')
 
     if 'docxupload' not in request.files:
         abort(400, "No file uploaded")
@@ -125,7 +125,7 @@ from pypdf import PdfReader, PdfWriter
 @app.route('/pdfmerge', methods=['GET', 'POST'])
 def pdfmerge():
     if request.method == 'GET':
-        return render_template('pdfmerge.html')
+        return render_template('pdfmerge.html', active_page='pdfmerge')
 
     # Match the input name in `templates/pdfmerge.html`
     files = [f for f in request.files.getlist('files[]') if f and f.filename]
