@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Compress{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center;">PDF Compress</h1>
+
+<form id="compress-form" style="text-align: center;" action="/pdfcompress" method="post" enctype="multipart/form-data">
+    <label for="pdf_upload">Upload PDF file:</label>
+    <input type="file" id="pdf_upload" name="pdfcompress" accept="application/pdf" required>
+    <br><br>
+    <input class="my-button" type="submit" value="Compress PDF">
+</form>
+
+<div id="progress-bar" style="display:none; text-align:center; margin-top:20px;">
+    <img src="{{ url_for('static', filename='spinner.gif') }}" alt="Loading..." style="height:48px;">
+    <span id="progress-text">Processing...</span>
+</div>
+
+<script>
+document.getElementById('compress-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('progress-bar').style.display = 'block';
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        // Create a link to download the file
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'compressed_' + document.getElementById('pdf_upload').files[0].name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        // Refresh after download
+        window.location.reload();
+    })
+    .catch(() => {
+        alert('Compression failed.');
+        window.location.reload();
+    });
+});
+</script>
+{% endblock %}
