@@ -173,8 +173,36 @@ def pdfmerge():
         as_attachment=True,
         download_name="merged.pdf",
     )
+@app.route('/pdfcompress', methods=['GET', 'POST'])
+def pdfcompress():
+    if request.method == 'GET':
+        return render_template('pdfcompress.html', active_page='pdfcompress')
+    if 'pdfcompress' not in request.files:
+        abort(400, "No file uploaded")
 
+    pdf_file = request.files['pdfcompress']
+    filename = pdf_file.filename or 'upload.pdf'
+    safe_name = secure_filename(filename)
+    safe_name = f"{uuid.uuid4().hex}_{safe_name}"
 
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pdf_path = os.path.join(tmpdir, safe_name)
+        pdf_file.save(pdf_path)
+
+        writer = PdfWriter(clone_from=pdf_path)
+        for page in writer.pages:
+            page.compress_content_streams(level=9)
+
+        out_buf = io.BytesIO()
+        writer.write(out_buf)
+        out_buf.seek(0)
+
+    return send_file(
+        out_buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"compressed_{filename}",
+    )
 
 
 
