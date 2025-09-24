@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Image Converter{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center;">Image Converter</h1>
+<body>
+    <h1 style="text-align: center;">Upload and Convert Image</h1>
+    <form style="text-align: center;" action="/imageconvert" method="post" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <br><br>
+        <label for="format">Convert to:</label>
+        <select name="format" id="format">
+            <option value="JPEG">JPEG</option>
+            <option value="PNG">PNG</option>
+            <option value="GIF">GIF</option>
+            <option value="BMP">BMP</option>
+            <option value="TIFF">TIFF</option>
+            <option value="WEBP">WEBP</option>
+            <option value="ICO">ICO</option>
+            <option value="ICNS">ICNS</option>
+            <option value="PPM">PPM</option>
+            <option value="TGA">TGA</option>
+
+        </select>
+        <br><br>
+        <input class="my-button" type="submit" value="Convert to Word">
+    </form>
+</body>
+<style>
+    select {
+  /* Styles for the select box itself */
+  width: 200px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  appearance: none; /* Removes default browser styling for select */
+}
+
+option {
+  /* Styles for individual options */
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 5px;
+}
+
+option:hover {
+  /* Styles for options on hover */
+  background-color: #e0e0e0;
+}
+
+option:checked {
+  /* Styles for the selected option (may not be fully supported in all browsers) */
+  background-color: #c0c0c0;
+  font-weight: bold;
+}
+</style>
+
+{% endblock %}
