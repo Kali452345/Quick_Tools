@@ -1,13 +1,15 @@
+import logging
 import os
 import uuid
-import logging
+from logging import exception
 from flask import Flask, render_template, request, abort, send_file
 from pdf2docx import Converter
-from pypdf import PdfWriter
+from pypdf import PdfWriter, PdfReader
 import subprocess
 import qrcode
 import io
 import base64
+from PIL import Image
 
 
 import tempfile
@@ -120,7 +122,7 @@ def wordtopdf():
             download_name=pdf_name
         )
 # python
-from pypdf import PdfReader, PdfWriter
+
 
 @app.route('/pdfmerge', methods=['GET', 'POST'])
 def pdfmerge():
@@ -203,8 +205,113 @@ def pdfcompress():
         as_attachment=True,
         download_name=f"compressed_{filename}",
     )
+@app.route('/pdfprotect', methods=['GET', 'POST'])
+def pdfprotect():
+    if request.method == 'GET':
+        return render_template('pdfprotect.html', active_page='pdfprotect')
+
+    # Handle Set Password form
+    if 'pdfprotect' in request.files:
+        pdf_file = request.files['pdfprotect']
+        password = request.form.get('password')
+        if not pdf_file or not password:
+            abort(400, "PDF file and password are required")
+        filename = pdf_file.filename or 'upload.pdf'
+        safe_name = secure_filename(filename)
+        safe_name = f"{uuid.uuid4().hex}_{safe_name}"
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                pdf_path = os.path.join(tmpdir, safe_name)
+                pdf_file.save(pdf_path)
+                reader = PdfReader(pdf_path)
+                writer = PdfWriter()
+                for page in reader.pages:
+                    writer.add_page(page)
+                writer.encrypt(password)
+                out_buf = io.BytesIO()
+                writer.write(out_buf)
+                out_buf.seek(0)
+        except Exception:
+            logging.exception("Protection failed")
+            abort(500, "Protection failed")
+        return send_file(
+            out_buf,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"protected_{filename}"
+        )
+    # If no file was uploaded, return an error
+    return "No file uploaded.", 400
 
 
 
+@app.route('/pdfunprotect', methods=['POST'])
+def pdfunprotect():
+    if 'pdfunprotect' not in request.files:
+        return "No file uploaded.", 400
+    pdf_file = request.files['pdfunprotect']
+    password = request.form.get('password')
+
+    if not pdf_file.filename.endswith('.pdf'):
+        return "Invalid file type. Please upload a PDF.", 400
+
+    try:
+        pdf_stream = io.BytesIO(pdf_file.read())
+        reader = PdfReader(pdf_stream)
+
+        if reader.is_encrypted:
+            if not password:
+                return "PDF is encrypted. Please provide the password.", 400
+            if reader.decrypt(password) == 0:
+                return "Wrong password.", 401
+
+        writer = PdfWriter()
+        for page in reader.pages:
+            writer.add_page(page)
+
+        output_stream = io.BytesIO()
+        writer.write(output_stream)
+        output_stream.seek(0)
+
+        return send_file(
+            output_stream,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='decrypted_pdf.pdf'
+        )
+
+    except Exception as e:
+        return f"Error processing PDF: {e}", 500
+
+@app.route('/imageconvert', methods=['GET', 'POST'])
+def imageconvert():
+    if request.method == 'GET':
+        return render_template('imageconvert.html', active_page='imageconvert')
+    if 'image' not in request.files:
+        abort(400, "No file uploaded")
+    file = request.files['image']
+
+    if file.filename == '':
+        return "No selected file", 400
+
+    if file:
+        try:
+            # Open the image using Pillow
+            img = Image.open(file.stream)
+
+            # Perform conversion (e.g., to JPEG)
+            output_format = request.form.get('format', 'JPEG').upper()
+
+            # Create an in-memory byte stream for the output image
+            img_io = io.BytesIO()
+            img.save(img_io, format=output_format)
+            img_io.seek(0)  # Rewind the stream to the beginning
+
+            # Send the converted image as a file
+            return send_file(img_io, mimetype=f'image/{output_format.lower()}', as_attachment=True,
+                             download_name=f'converted_image.{output_format.lower()}')
+
+        except Exception as e:
+            return f"Error processing image: {e}", 500
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000,debug=True)
