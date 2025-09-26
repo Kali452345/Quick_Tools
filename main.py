@@ -313,5 +313,117 @@ def imageconvert():
 
         except Exception as e:
             return f"Error processing image: {e}", 500
+
+
+@app.route('/codeeditor', methods=['GET', 'POST'])
+def codeeditor():
+    if request.method == 'GET':
+        return render_template('codeeditor.html', active_page='codeeditor')
+
+    # Handle code saving/processing if needed
+    code_content = request.form.get('code', '')
+    language = request.form.get('language', 'javascript')
+
+    # You can add code processing logic here if needed
+    return {"status": "success", "message": "Code saved"}, 200
+
+@app.route('/runcode', methods=['POST'])
+def runcode():
+    code = request.json.get('code', '')
+    language = request.json.get('language', 'javascript')
+
+    if language == 'python':
+        try:
+            # Create a temporary file and execute it
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                f.write(code)
+                temp_file = f.name
+
+            result = subprocess.run(
+                ['python', temp_file],
+                capture_output=True,
+                text=True,
+                timeout=10  # 10 second timeout
+            )
+
+            os.unlink(temp_file)  # Clean up
+
+            if result.returncode == 0:
+                return {'output': result.stdout, 'error': None}
+            else:
+                return {'output': result.stdout, 'error': result.stderr}
+
+        except subprocess.TimeoutExpired:
+            return {'output': '', 'error': 'Code execution timed out (10 seconds)'}
+        except Exception as e:
+            return {'output': '', 'error': str(e)}
+
+    elif language == 'javascript':
+        try:
+            # Use Node.js for JavaScript execution
+            result = subprocess.run(
+                ['node', '-e', code],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode == 0:
+                return {'output': result.stdout, 'error': None}
+            else:
+                return {'output': result.stdout, 'error': result.stderr}
+
+        except subprocess.TimeoutExpired:
+            return {'output': '', 'error': 'Code execution timed out'}
+        except Exception as e:
+            return {'output': '', 'error': f'JavaScript execution failed: {str(e)}'}
+
+    return {'output': '', 'error': f'Execution not supported for {language}'}
+
+
+@app.route('/imagecompress', methods=['GET', 'POST'])
+def imagecompress():
+    if request.method == 'GET':
+        return render_template('imagecompress.html', active_page='imagecompress')
+
+    if 'image' not in request.files:
+        abort(400, "No file uploaded")
+
+    file = request.files['image']
+    if file.filename == '':
+        return "No selected file", 400
+
+    quality = int(request.form.get('quality', 85))  # Default quality 85%
+
+    try:
+        # Open the image using Pillow
+        img = Image.open(file.stream)
+
+        # Convert to RGB if necessary (for JPEG compression)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        # Create an in-memory byte stream for the compressed image
+        img_io = io.BytesIO()
+
+        # Compress the image
+        img.save(img_io, format='JPEG', quality=quality, optimize=True)
+        img_io.seek(0)
+
+        # Generate filename
+        original_name = file.filename.rsplit('.', 1)[0]
+        compressed_filename = f"compressed_{original_name}.jpg"
+
+        return send_file(
+            img_io,
+            mimetype='image/jpeg',
+            as_attachment=True,
+            download_name=compressed_filename
+        )
+
+    except Exception as e:
+        return f"Error compressing image: {e}", 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)

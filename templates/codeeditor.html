@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Code Editor{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center;">Code Editor</h1>
+
+<div style="margin: 20px;">
+    <div style="margin-bottom: 10px;">
+        <label>Language: </label>
+        <select id="languageSelect" style="padding: 5px; margin-right: 20px;">
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+            <option value="sql">SQL</option>
+            <option value="xml">XML</option>
+        </select>
+        
+        <label>Theme: </label>
+        <select id="themeSelect" style="padding: 5px;">
+            <option value="vs">Light</option>
+            <option value="vs-dark">Dark</option>
+            <option value="hc-black">High Contrast</option>
+        </select>
+        
+        <button id="saveCode" class="my-button" style="margin-left: 20px;">Save Code</button>
+        <button id="runCode" class="my-button" style="margin-left: 10px;">Run Code</button>
+
+    </div>
+    
+    <div id="editor" style="width: 100%; height: 500px; border: 1px solid #ccc;"></div>
+    <div id="output" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; white-space: pre-wrap; font-family: 'Courier New', monospace; display: none;">
+        <div style="font-weight: bold; margin-bottom: 10px; color: #495057;">Output:</div>
+        <div id="outputContent"></div>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/monaco-editor@0.34.0/min/vs/loader.js"></script>
+<script>
+let editor;
+
+require.config({ 
+    paths: { 'vs': 'https://unpkg.com/monaco-editor@0.34.0/min/vs' }
+});
+
+require(['vs/editor/editor.main'], function() {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+        value: `// Welcome to the Code Editor!
+// Start typing your code here...
+
+function hello() {
+    console.log("Hello, World!");
+}
+
+hello();`,
+        language: 'javascript',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        fontSize: 14,
+        wordWrap: 'on',
+        minimap: { enabled: true },
+        scrollBeyondLastLine: false
+    });
+
+    // Language change handler
+    document.getElementById('languageSelect').addEventListener('change', function() {
+        const language = this.value;
+        monaco.editor.setModelLanguage(editor.getModel(), language);
+        
+        // Set sample code based on language
+        const sampleCode = getSampleCode(language);
+        editor.setValue(sampleCode);
+    });
+
+    // Theme change handler
+    document.getElementById('themeSelect').addEventListener('change', function() {
+        monaco.editor.setTheme(this.value);
+    });
+
+    // Save code handler
+    document.getElementById('saveCode').addEventListener('click', function() {
+        const code = editor.getValue();
+        const language = document.getElementById('languageSelect').value;
+        
+        // Create downloadable file
+        const blob = new Blob([code], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `code.${getFileExtension(language)}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        
+        alert('Code saved as file!');
+    });
+});
+// Run code handler
+document.getElementById('runCode').addEventListener('click', function() {
+    const code = editor.getValue();
+    const language = document.getElementById('languageSelect').value;
+    const outputDiv = document.getElementById('output');
+    const outputContent = document.getElementById('outputContent');
+
+    outputDiv.style.display = 'block';
+    outputContent.textContent = 'Running...';
+    outputContent.style.color = '#6c757d';
+
+    fetch('/runcode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: code,
+            language: language
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let output = '';
+        let hasOutput = false;
+
+        if (data.output && data.output.trim()) {
+            output += data.output;
+            hasOutput = true;
+        }
+
+        if (data.error && data.error.trim()) {
+            if (hasOutput) output += '\n\n';
+            output += 'Error:\n' + data.error;
+            outputContent.style.color = '#dc3545'; // Red for errors
+        } else {
+            outputContent.style.color = '#28a745'; // Green for success
+        }
+
+        outputContent.textContent = output || 'Code executed successfully (no output)';
+    })
+    .catch(error => {
+        outputContent.textContent = 'Execution failed: ' + error;
+        outputContent.style.color = '#dc3545';
+    });
+});
+
+
+function getSampleCode(language) {
+    const samples = {
+        javascript: `// JavaScript Example
+function greet(name) {
+    return \`Hello, \${name}!\`;
+}
+
+console.log(greet("World"));`,
+        
+        python: `# Python Example
+def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("World"))`,
+        
+        html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample HTML</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <p>This is a sample HTML document.</p>
+</body>
+</html>`,
+        
+        css: `/* CSS Example */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}`,
+        
+        json: `{
+  "name": "Sample JSON",
+  "version": "1.0.0",
+  "description": "A sample JSON file",
+  "data": {
+    "users": [
+      {"id": 1, "name": "John Doe"},
+      {"id": 2, "name": "Jane Smith"}
+    ]
+  }
+}`,
+        
+        markdown: `# Markdown Example
+
+## Features
+- **Bold text**
+- *Italic text*
+- \`Inline code\`
+
+### Code Block
+\`\`\`javascript
+console.log("Hello from markdown!");
+\`\`\`
+
+### Links
+[Visit Google](https://google.com)`,
+        
+        sql: `-- SQL Example
+SELECT 
+    u.name,
+    u.email,
+    COUNT(o.id) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.active = 1
+GROUP BY u.id, u.name, u.email
+ORDER BY order_count DESC;`,
+        
+        xml: `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <users>
+        <user id="1">
+            <name>John Doe</name>
+            <email>john@example.com</email>
+        </user>
+        <user id="2">
+            <name>Jane Smith</name>
+            <email>jane@example.com</email>
+        </user>
+    </users>
+</root>`
+    };
+    
+    return samples[language] || '// Start coding...';
+}
+
+function getFileExtension(language) {
+    const extensions = {
+        javascript: 'js',
+        python: 'py',
+        html: 'html',
+        css: 'css',
+        json: 'json',
+        markdown: 'md',
+        sql: 'sql',
+        xml: 'xml'
+    };
+    
+    return extensions[language] || 'txt';
+}
+</script>
+{% endblock %}
