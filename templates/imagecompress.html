@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Image Compressor{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center;">Image Compressor</h1>
+
+<form id="compress-form" style="text-align: center;" action="/imagecompress" method="post" enctype="multipart/form-data">
+    <label for="image_upload">Upload Image:</label>
+    <input type="file" id="image_upload" name="image" accept="image/*" required>
+    <br><br>
+
+    <label for="quality">Compression Quality:</label>
+    <input type="range" id="quality" name="quality" min="10" max="100" value="85" oninput="updateQualityValue(this.value)">
+    <span id="qualityValue">85%</span>
+    <br><br>
+
+    <div style="margin: 10px 0; color: #666; font-size: 14px;">
+        <p>Quality Guide:</p>
+        <p>10-30%: High compression, lower quality | 50-70%: Balanced | 80-100%: Low compression, high quality</p>
+    </div>
+
+    <input class="my-button" type="submit" value="Compress Image">
+</form>
+
+<div id="progress-bar" style="display:none; text-align:center; margin-top:20px;">
+    <img src="{{ url_for('static', filename='spinner.gif') }}" alt="Loading..." style="height:48px;">
+    <span id="progress-text">Compressing...</span>
+</div>
+
+<div id="result-message" style="display:none; text-align:center; margin-top:20px; padding:15px; border-radius:5px;">
+    <span id="result-text"></span>
+</div>
+
+<div id="preview-section" style="margin-top: 30px; text-align: center; display: none;">
+    <h3>Image Preview:</h3>
+    <img id="image-preview" style="max-width: 400px; max-height: 300px; border: 1px solid #ddd;" alt="Preview">
+    <p id="file-info"></p>
+</div>
+
+<script>
+function updateQualityValue(value) {
+    document.getElementById('qualityValue').textContent = value + '%';
+}
+
+function showMessage(text, isSuccess = true) {
+    const messageDiv = document.getElementById('result-message');
+    const messageText = document.getElementById('result-text');
+
+    messageText.textContent = text;
+    messageDiv.style.display = 'block';
+
+    if (isSuccess) {
+        messageDiv.style.backgroundColor = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.style.border = '1px solid #c3e6cb';
+    } else {
+        messageDiv.style.backgroundColor = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.style.border = '1px solid #f5c6cb';
+    }
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
+}
+
+// Image preview functionality
+document.getElementById('image_upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Hide previous messages
+        document.getElementById('result-message').style.display = 'none';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('image-preview');
+            const previewSection = document.getElementById('preview-section');
+            const fileInfo = document.getElementById('file-info');
+
+            preview.src = e.target.result;
+            previewSection.style.display = 'block';
+
+            // Show file info
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            fileInfo.textContent = `File: ${file.name} | Size: ${fileSize} MB`;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Form submission with progress
+document.getElementById('compress-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('progress-bar').style.display = 'block';
+    document.getElementById('result-message').style.display = 'none';
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        // Create a link to download the file
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        const originalFile = document.getElementById('image_upload').files[0];
+        const originalName = originalFile.name.split('.')[0];
+        const compressedFilename = `compressed_${originalName}.jpg`;
+        a.download = compressedFilename;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        // Hide progress bar and show success message
+        document.getElementById('progress-bar').style.display = 'none';
+        showMessage(`✓ Image compressed successfully! Downloaded as: ${compressedFilename}`, true);
+    })
+    .catch(() => {
+        document.getElementById('progress-bar').style.display = 'none';
+        showMessage('✗ Compression failed. Please try again.', false);
+    });
+});
+</script>
+
+<style>
+input[type="range"] {
+    width: 200px;
+    margin: 0 10px;
+}
+
+#qualityValue {
+    font-weight: bold;
+    color: #007bff;
+}
+
+#image-preview {
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#file-info {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+#result-message {
+    font-weight: bold;
+    font-size: 16px;
+}
+</style>
+{% endblock %}

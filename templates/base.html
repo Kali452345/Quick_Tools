@@ -118,6 +118,82 @@
         }
 
         {% block extra_css %}{% endblock %}
+/* Mobile responsive styles */
+@media screen and (max-width: 768px) {
+    .topnav {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .nav-title {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .nav-links {
+        margin-left: 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .nav-links a, .dropdown .dropbtn {
+        padding: 10px 8px;
+        font-size: 14px;
+    }
+
+    .dropdown-content {
+        position: static;
+        display: block;
+        box-shadow: none;
+        background-color: #444;
+        min-width: auto;
+        margin-top: 5px;
+    }
+
+    .dropdown-content a {
+        color: white;
+        background-color: #444;
+        padding: 8px 12px;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #555;
+    }
+
+    /* Hide dropdown content by default on mobile */
+    .dropdown-content {
+        display: none;
+    }
+
+    /* Show dropdown when clicked */
+    .dropdown.active .dropdown-content {
+        display: block;
+    }
+
+    /* Make dropdown button clickable on mobile */
+    .dropdown .dropbtn {
+        cursor: pointer;
+    }
+}
+
+/* For very small screens */
+@media screen and (max-width: 480px) {
+    .nav-title {
+        font-size: 1.2rem;
+    }
+
+    .nav-links a, .dropdown .dropbtn {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -134,7 +210,7 @@
                     <a {% if active_page == 'wordtopdf' %}class="active"{% endif %} href="/wordtopdf">Word to Pdf</a>
                     <a {% if active_page == 'pdfmerge' %}class="active"{% endif %} href="/pdfmerge">Pdf Merge</a>
                     <a {% if active_page == 'pdfcompress' %}class="active"{% endif %} href="/pdfcompress">Pdf Compress</a>
-                     <a {% if active_page == 'pdfprotect' %}class="active"{% endif %} href="/pdfprotect">Pdf Protect</a>
+                    <a {% if active_page == 'pdfprotect' %}class="active"{% endif %} href="/pdfprotect">Pdf Protect</a>
                 </div>
             </div>
             <div class="dropdown">
@@ -143,7 +219,16 @@
                 </button>
                 <div class="dropdown-content">
                     <a {% if active_page == 'imageconvert' %}class="active"{% endif %} href="/imageconvert">Image Converter</a>
+                    <a {% if active_page == 'imagecompress' %}class="active"{% endif %} href="/imagecompress">Image Compressor</a>
 
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn">Coding Tools
+                    <i class="fa fa-caret-down"></i>
+                </button>
+                <div class="dropdown-content">
+                    <a {% if active_page == 'codeeditor' %}class="active"{% endif %} href="/codeeditor">Code Editor</a>
                 </div>
             </div>
         </div>
@@ -153,5 +238,40 @@
     <div style="padding-left:16px">
         {% block content %}{% endblock %}
     </div>
+<script>
+// Mobile dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+
+    dropdowns.forEach(dropdown => {
+        const dropbtn = dropdown.querySelector('.dropbtn');
+
+        dropbtn.addEventListener('click', function(e) {
+            // On mobile, toggle the dropdown
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                dropdown.classList.toggle('active');
+
+                // Close other dropdowns
+                dropdowns.forEach(otherDropdown => {
+                    if (otherDropdown !== dropdown) {
+                        otherDropdown.classList.remove('active');
+                    }
+                });
+            }
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.remove('active');
+            });
+        }
+    });
+});
+</script>
+
 </body>
 </html>
