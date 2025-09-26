@@ -1,6 +1,5 @@
-I'll update your README.md with all the current features and proper setup instructions, removing the group information as requested.
 
-```markdown
+
 # Quick Tools Project
 
 This is **Quick Tools**, a comprehensive web-based application that provides various utility tools including QR code generation, PDF tools, image tools, and a code editor with execution capabilities.
@@ -179,14 +178,3 @@ Feel free to submit issues, fork the repository, and create pull requests for an
 
 > **Repository:** [Quick_Tools](https://github.com/Kali452345/Quick_Tools)
 ```
-
-This updated README provides:
-- Complete feature overview of all current tools
-- Clear setup instructions for different operating systems
-- Detailed usage guide for each feature
-- System requirements including Node.js and LibreOffice
-- Proper technical documentation
-- Updated repository link to the new Quick_Tools repo
-- Removed all group information as requested
-
-The README now accurately reflects all the functionality in your Quick Tools project.
