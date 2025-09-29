@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Learning Functions</title>
+</head>
+<body>
+    <h1>JavaScript Functions</h1>
+
+    <script>
+        // Functions are like recipes - they do a specific task
+
+        // Creating a function
+        function sayHello(personName) {
+            return "Hello " + personName + "! Nice to meet you!";
+        }
+
+        // Using (calling) the function
+        let greeting = sayHello("Prince");
+        alert(greeting);
+
+        // Another function example
+        function addNumbers(number1, number2) {
+            let result = number1 + number2;
+            return result;
+        }
+
+        // Test the math function
+        let sum = addNumbers(10, 15);
+        console.log("10 + 15 =", sum);
+
+        // Functions can be used multiple times
+        console.log("5 + 7 =", addNumbers(5, 7));
+        console.log("100 + 200 =", addNumbers(100, 200));
+    </script>
+</body>
+</html>

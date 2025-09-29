@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Basics</title>
+</head>
+<body>
+    <h1>Learning HTML5 Canvas</h1>
+
+    <!-- Canvas is like a blank drawing board -->
+    <canvas id="myCanvas" width="400" height="300" style="border: 1px solid black;"></canvas>
+
+    <script>
+        // Get the canvas element
+        let canvas = document.getElementById('myCanvas');
+
+        // Get the "context" - this is what we use to draw
+        let ctx = canvas.getContext('2d');
+
+        // Draw a simple rectangle
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(50, 50, 100, 80);
+
+        // Draw a circle
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(250, 100, 40, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Draw some text
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText('Hello Canvas!', 50, 200);
+    </script>
+</body>
+</html>

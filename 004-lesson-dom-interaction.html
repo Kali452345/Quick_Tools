@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOM Interaction</title>
+</head>
+<body>
+    <h1 id="title">Click the button to change me!</h1>
+    <p id="message">This text will also change...</p>
+
+    <button onclick="changeText()">Click Me!</button>
+    <button onclick="changeColors()">Change Colors!</button>
+
+    <script>
+        // Functions that interact with HTML elements
+
+        function changeText() {
+            // Get HTML elements by their ID
+            document.getElementById("title").innerText = "Hello Prince! You clicked the button!";
+            document.getElementById("message").innerText = "JavaScript can change any text on the page!";
+        }
+
+        function changeColors() {
+            // Change the styling of elements
+            document.getElementById("title").style.color = "blue";
+            document.getElementById("message").style.color = "red";
+            document.body.style.backgroundColor = "lightgray";
+        }
+    </script>
+</body>
+</html>

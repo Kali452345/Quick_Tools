@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Background Remover{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center;">Background Remover</h1>
+<div id="form-section" style="text-align: center;">
+    <form id="removebg-form" enctype="multipart/form-data">
+        <label for="image_upload">Upload Image:</label>
+        <input type="file" id="image_upload" name="image" accept="image/*" required>
+        <br><br>
+        <input class="my-button" type="submit" value="Remove Background">
+    </form>
+    <div id="spinner" style="display:none; margin: 20px auto;">
+        <img src="{{ url_for('static', filename='spinner.gif') }}" alt="Processing..." width="48" height="48">
+        <div>Processing, please wait...</div>
+    </div>
+    <button id="download-btn" class="my-button" style="display:none; margin-top: 20px;">Download Result</button>
+    <div id="error-msg" style="color:red; margin-top:10px;"></div>
+</div>
+<script>
+const form = document.getElementById('removebg-form');
+const spinner = document.getElementById('spinner');
+const downloadBtn = document.getElementById('download-btn');
+const errorMsg = document.getElementById('error-msg');
+let fileId = null;
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    spinner.style.display = 'block';
+    downloadBtn.style.display = 'none';
+    errorMsg.textContent = '';
+    const formData = new FormData(form);
+    fetch('/imageremovebg', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.style.display = 'none';
+        if (data.success) {
+            fileId = data.file_id;
+            downloadBtn.style.display = 'inline-block';
+        } else {
+            errorMsg.textContent = data.error || 'Unknown error.';
+        }
+    })
+    .catch(() => {
+        spinner.style.display = 'none';
+        errorMsg.textContent = 'An error occurred.';
+    });
+});
+
+downloadBtn.addEventListener('click', function() {
+    if (!fileId) return;
+    window.location.href = '/download-removed-bg/' + fileId;
+});
+</script>
+{% endblock %}
