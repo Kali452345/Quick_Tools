@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+from rembg import remove
 from logging import exception
 from flask import Flask, render_template, request, abort, send_file
 from pdf2docx import Converter
@@ -423,6 +424,38 @@ def imagecompress():
 
     except Exception as e:
         return f"Error compressing image: {e}", 500
+
+@app.route('/imageremovebg', methods=['GET', 'POST'])
+def imageremovebg():
+    if request.method == 'GET':
+        return render_template('imageremovebg.html', active_page='imageremovebg')
+    if 'image' not in request.files:
+        return {'success': False, 'error': 'No file uploaded'}, 400
+    file = request.files['image']
+    if file.filename == '':
+        return {'success': False, 'error': 'No selected file'}, 400
+    try:
+        import uuid, tempfile, os
+        input_bytes = file.read()
+        output_bytes = remove(input_bytes)
+        # Save to a temp file with a unique id
+        file_id = str(uuid.uuid4())
+        temp_dir = tempfile.gettempdir()
+        out_path = os.path.join(temp_dir, f'removebg_{file_id}.png')
+        with open(out_path, 'wb') as f:
+            f.write(output_bytes)
+        return {'success': True, 'file_id': file_id}
+    except Exception as e:
+        return {'success': False, 'error': f'Error removing background: {e}'}, 500
+
+@app.route('/download-removed-bg/<file_id>')
+def download_removed_bg(file_id):
+    import os, tempfile
+    temp_dir = tempfile.gettempdir()
+    out_path = os.path.join(temp_dir, f'removebg_{file_id}.png')
+    if not os.path.exists(out_path):
+        return 'File not found', 404
+    return send_file(out_path, mimetype='image/png', as_attachment=True, download_name='no_bg.png')
 
 
 if __name__ == '__main__':

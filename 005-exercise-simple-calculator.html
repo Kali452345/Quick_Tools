@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Calculator</title>
+</head>
+<body>
+    <h1>Prince's Simple Calculator</h1>
+
+    <input type="number" id="num1" placeholder="First number">
+    <select id="operation">
+        <option value="+">+</option>
+        <option value="-">-</option>
+        <option value="*">×</option>
+        <option value="/"">÷</option>
+    </select>
+    <input type="number" id="num2" placeholder="Second number">
+
+    <button onclick="calculate()">Calculate!</button>
+
+    <h2 id="result">Result will appear here</h2>
+
+    <script>
+        function calculate() {
+            // YOUR TASK: Fill in this function!
+            // 1. Get the values from num1, num2, and operation
+            let num1 = parseFloat(document.getElementById("num1").value);
+            let num2 = parseFloat(document.getElementById("num2").value);
+            let operation = document.getElementById("operation").value;
+            if (operation === "+"){
+                let result = num1 + num2;
+                document.getElementById("result").innerText = result;
+
+            }else if (operation === "-"){
+                document.getElementById("result").innerText = num1 - num2;
+            }else if (operation === "*"){
+
+                document.getElementById("result").innerText = num1 * num2;
+            }else {
+                document.getElementById("result").innerText = num1 / num2;
+            }
+
+            // 3. Display the result
+
+            // Hint: Use document.getElementById("num1").value to get input values
+        }
+    </script>
+</body>
+</html>

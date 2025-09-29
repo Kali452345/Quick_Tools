@@ -4,196 +4,166 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Quick Tools{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+            background: #f6f8fa;
+            min-height: 100vh;
         }
-
         .topnav {
-            overflow: hidden;
-            background-color: #333;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             display: flex;
             justify-content: flex-start;
             align-items: center;
-            padding: 0 24px;
+            padding: 0 32px;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-
         .nav-title {
-            color: #fff;
+            color: #222;
             font-size: 2rem;
-            font-weight: bold;
+            font-weight: 600;
             letter-spacing: 2px;
+            margin-right: 48px;
         }
-
         .nav-links {
-            margin-left: 80px;
             display: flex;
             gap: 10px;
         }
-
         .nav-links a {
-            color: #f2f2f2;
+            color: #222;
             text-align: center;
-            padding: 14px 16px;
+            padding: 12px 18px;
             text-decoration: none;
-            font-size: 17px;
+            font-size: 1rem;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
         }
-
         .nav-links a:hover {
-            background-color: #ddd;
-            color: black;
+            background: #e6f4ea;
+            color: #04AA6D;
         }
-
         .nav-links a.active {
-            background-color: #04AA6D;
-            color: white;
+            background: #04AA6D;
+            color: #fff;
         }
-
         .dropdown {
-            float: left;
-            overflow: hidden;
+            position: relative;
         }
-
         .dropdown .dropbtn {
-            font-size: 16px;
+            font-size: 1rem;
             border: none;
             outline: none;
-            color: white;
-            padding: 14px 16px;
-            background-color: inherit;
+            color: #222;
+            padding: 12px 18px;
+            background: none;
             font-family: inherit;
             margin: 0;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
         }
-
-        .navbar a:hover, .dropdown:hover .dropbtn {
-            background-color: #ddd;
-            color: black;
+        .dropdown .dropbtn:hover, .dropdown .dropbtn:focus {
+            background: #e6f4ea;
+            color: #04AA6D;
         }
-
         .dropdown-content {
             display: none;
             position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
+            background: #fff;
+            min-width: 180px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            top: 48px;
+            left: 0;
+            z-index: 10;
         }
-
         .dropdown-content a {
-            float: none;
-            color: black;
-            padding: 12px 16px;
+            color: #222;
+            padding: 12px 18px;
             text-decoration: none;
             display: block;
-            text-align: left;
+            border-radius: 6px;
         }
-
         .dropdown-content a:hover {
-            background-color: #ddd;
+            background: #e6f4ea;
+            color: #04AA6D;
         }
-
-        .dropdown:hover .dropdown-content {
+        .dropdown:hover .dropdown-content, .dropdown.active .dropdown-content {
             display: block;
         }
-
+        .container {
+            max-width: 900px;
+            margin: 32px auto 0 auto;
+            padding: 24px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+        }
         .my-button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
+            background: #04AA6D;
+            color: #fff;
+            padding: 10px 24px;
             border: none;
-            border-radius: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background 0.2s;
         }
-
         .my-button:hover {
-            background-color: #0056b3;
+            background: #038e5a;
         }
-
         .my-button:active {
-            background-color: #004085;
+            background: #026c45;
         }
-
+        footer {
+            margin-top: 48px;
+            padding: 24px 0 12px 0;
+            text-align: center;
+            color: #888;
+            font-size: 0.95rem;
+        }
         {% block extra_css %}{% endblock %}
-/* Mobile responsive styles */
-@media screen and (max-width: 768px) {
-    .topnav {
-        flex-direction: column;
-        padding: 10px;
-    }
-
-    .nav-title {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-
-    .nav-links {
-        margin-left: 0;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 5px;
-    }
-
-    .nav-links a, .dropdown .dropbtn {
-        padding: 10px 8px;
-        font-size: 14px;
-    }
-
-    .dropdown-content {
-        position: static;
-        display: block;
-        box-shadow: none;
-        background-color: #444;
-        min-width: auto;
-        margin-top: 5px;
-    }
-
-    .dropdown-content a {
-        color: white;
-        background-color: #444;
-        padding: 8px 12px;
-    }
-
-    .dropdown-content a:hover {
-        background-color: #555;
-    }
-
-    /* Hide dropdown content by default on mobile */
-    .dropdown-content {
-        display: none;
-    }
-
-    /* Show dropdown when clicked */
-    .dropdown.active .dropdown-content {
-        display: block;
-    }
-
-    /* Make dropdown button clickable on mobile */
-    .dropdown .dropbtn {
-        cursor: pointer;
-    }
-}
-
-/* For very small screens */
-@media screen and (max-width: 480px) {
-    .nav-title {
-        font-size: 1.2rem;
-    }
-
-    .nav-links a, .dropdown .dropbtn {
-        padding: 8px 6px;
-        font-size: 12px;
-    }
-
-    .dropdown-content a {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-}
-
+        @media screen and (max-width: 900px) {
+            .container {
+                margin: 16px;
+                padding: 12px;
+            }
+        }
+        @media screen and (max-width: 600px) {
+            .topnav {
+                flex-direction: column;
+                align-items: flex-start;
+                height: auto;
+                padding: 0 8px;
+            }
+            .nav-title {
+                font-size: 1.3rem;
+                margin: 12px 0 0 0;
+            }
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+                gap: 0;
+            }
+            .nav-links a, .dropdown .dropbtn {
+                width: 100%;
+                text-align: left;
+                padding: 10px 12px;
+            }
+            .dropdown-content {
+                position: static;
+                min-width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -202,9 +172,7 @@
         <div class="nav-links">
             <a {% if active_page == 'qr-gen' %}class="active"{% endif %} href="/">Qr-GEN</a>
             <div class="dropdown">
-                <button class="dropbtn">PDF Tools
-                    <i class="fa fa-caret-down"></i>
-                </button>
+                <button class="dropbtn">PDF Tools</button>
                 <div class="dropdown-content">
                     <a {% if active_page == 'pdftoword' %}class="active"{% endif %} href="/pdftoword">Pdf to Word</a>
                     <a {% if active_page == 'wordtopdf' %}class="active"{% endif %} href="/wordtopdf">Word to Pdf</a>
@@ -214,64 +182,53 @@
                 </div>
             </div>
             <div class="dropdown">
-                <button class="dropbtn">Image Tools
-                    <i class="fa fa-caret-down"></i>
-                </button>
+                <button class="dropbtn">Image Tools</button>
                 <div class="dropdown-content">
                     <a {% if active_page == 'imageconvert' %}class="active"{% endif %} href="/imageconvert">Image Converter</a>
                     <a {% if active_page == 'imagecompress' %}class="active"{% endif %} href="/imagecompress">Image Compressor</a>
-
+                    <a {% if active_page == 'imageremovebg' %}class="active"{% endif %} href="/imageremovebg">Background Remover</a>
                 </div>
             </div>
             <div class="dropdown">
-                <button class="dropbtn">Coding Tools
-                    <i class="fa fa-caret-down"></i>
-                </button>
+                <button class="dropbtn">Coding Tools</button>
                 <div class="dropdown-content">
                     <a {% if active_page == 'codeeditor' %}class="active"{% endif %} href="/codeeditor">Code Editor</a>
                 </div>
             </div>
         </div>
-
     </div>
-
-    <div style="padding-left:16px">
+    <div class="container">
         {% block content %}{% endblock %}
     </div>
-<script>
-// Mobile dropdown functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const dropdowns = document.querySelectorAll('.dropdown');
-
-    dropdowns.forEach(dropdown => {
-        const dropbtn = dropdown.querySelector('.dropbtn');
-
-        dropbtn.addEventListener('click', function(e) {
-            // On mobile, toggle the dropdown
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                dropdown.classList.toggle('active');
-
-                // Close other dropdowns
-                dropdowns.forEach(otherDropdown => {
-                    if (otherDropdown !== dropdown) {
-                        otherDropdown.classList.remove('active');
-                    }
+    <footer>
+        &copy; {{ 2025 }} Quick Tools. All rights reserved.
+    </footer>
+    <script>
+    // Mobile dropdown functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdowns = document.querySelectorAll('.dropdown');
+        dropdowns.forEach(dropdown => {
+            const dropbtn = dropdown.querySelector('.dropbtn');
+            dropbtn.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    dropdown.classList.toggle('active');
+                    dropdowns.forEach(otherDropdown => {
+                        if (otherDropdown !== dropdown) {
+                            otherDropdown.classList.remove('active');
+                        }
+                    });
+                }
+            });
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('active');
                 });
             }
         });
     });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            dropdowns.forEach(dropdown => {
-                dropdown.classList.remove('active');
-            });
-        }
-    });
-});
-</script>
-
+    </script>
 </body>
 </html>
