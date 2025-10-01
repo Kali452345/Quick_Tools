@@ -1,0 +1,749 @@
+{% extends "base.html" %}
+
+{% block title %}LaTeX Editor{% endblock %}
+
+{% block content %}
+<!-- Load MathJax for real-time LaTeX rendering -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        packages: {'[+]': ['ams', 'newcommand', 'configmacros']},
+        tags: 'ams'
+    },
+    options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    startup: {
+        pageReady: () => {
+            return MathJax.startup.defaultPageReady();
+        }
+    }
+};
+</script>
+
+<!-- Load Monaco Editor for syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-edit"></i> LaTeX Editor</h3>
+                    <div class="btn-group">
+                        <button id="generateBtn" class="btn btn-primary">
+                            <i class="fas fa-robot"></i> Generate with AI
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                        <button id="downloadBtn" class="btn btn-success">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- AI Prompt Modal -->
+                    <div class="modal fade" id="aiPromptModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Generate LaTeX with AI</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="aiPrompt" class="form-label">Describe what you want to create:</label>
+                                        <textarea id="aiPrompt" class="form-control" rows="3"
+                                            placeholder="e.g., 'Create a mathematical equation for quadratic formula' or 'Make a simple document with title and paragraphs'"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" id="generateAIBtn" class="btn btn-primary">
+                                        <i class="fas fa-magic"></i> Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-0">
+                        <!-- LaTeX Editor Panel -->
+                        <div class="col-lg-6 border-end">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom">
+                                <h5 class="mb-0"><i class="fas fa-code"></i> LaTeX Code</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button id="togglePreviewMode" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-eye"></i> Live Math
+                                    </button>
+                                    <small class="text-muted">Monaco Editor with syntax highlighting</small>
+                                </div>
+                            </div>
+                            <div class="position-relative">
+                                <div id="monacoEditor" style="height: 600px; width: 100%;"></div>
+                                <!-- Fallback textarea -->
+                                <textarea id="latexCode" class="form-control border-0 d-none" style="height: 600px; font-family: 'Courier New', monospace; resize: none;"
+                                    placeholder="Loading Monaco Editor..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Preview Panel -->
+                        <div class="col-lg-6">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom">
+                                <h5 class="mb-0"><i class="fas fa-eye"></i> Live Preview</h5>
+                                <div class="btn-group btn-group-sm">
+                                    <button id="previewModeToggle" class="btn btn-outline-info">
+                                        <i class="fas fa-magic"></i> Math Preview
+                                    </button>
+                                    <button id="compilePDF" class="btn btn-outline-primary">
+                                        <i class="fas fa-file-pdf"></i> Compile PDF
+                                    </button>
+                                    <button id="refreshPreview" class="btn btn-outline-secondary">
+                                        <i class="fas fa-sync"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="previewPanel" class="p-4" style="height: 600px; overflow-y: auto; background-color: #f8f9fa;">
+                                <div id="loadingIndicator" class="text-center d-none">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Processing LaTeX...</p>
+                                </div>
+                                
+                                <!-- MathJax Preview Content -->
+                                <div id="mathPreviewContent" class="bg-white p-4 border rounded shadow-sm latex-preview">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-square-root-alt fa-3x mb-3"></i>
+                                        <p>Real-time math preview will appear here</p>
+                                        <small>Start typing LaTeX math expressions to see them rendered</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- PDF Compilation Results -->
+                                <div id="compilationContent" class="bg-white p-4 border rounded shadow-sm d-none">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-file-pdf fa-3x mb-3"></i>
+                                        <p>PDF compilation results will appear here</p>
+                                        <small>Click "Compile PDF" to test your complete LaTeX document</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Templates -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-templates"></i> Quick Templates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100 template-btn" data-template="basic">
+                                Basic Document
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100 template-btn" data-template="math">
+                                Math Equations
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100 template-btn" data-template="table">
+                                Table
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100 template-btn" data-template="letter">
+                                Letter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// LaTeX templates
+const templates = {
+    basic: `\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage{amsmath}
+\\begin{document}
+\\title{My Document}
+\\author{Your Name}
+\\date{\\today}
+\\maketitle
+
+\\section{Introduction}
+This is the introduction section.
+
+\\section{Main Content}
+Write your content here.
+
+\\end{document}`,
+
+    math: `\\documentclass{article}
+\\usepackage{amsmath, amssymb}
+\\begin{document}
+\\title{Mathematical Expressions}
+\\maketitle
+
+\\section{Equations}
+Inline math: $E = mc^2$
+
+Display math:
+\\[x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\]
+
+\\section{Matrix}
+\\[
+A = \\begin{pmatrix}
+a & b \\\\
+c & d
+\\end{pmatrix}
+\\]
+
+\\end{document}`,
+
+    table: `\\documentclass{article}
+\\usepackage{booktabs}
+\\begin{document}
+\\title{Tables Example}
+\\maketitle
+
+\\section{Simple Table}
+\\begin{table}[h]
+\\centering
+\\begin{tabular}{lcc}
+\\toprule
+Item & Quantity & Price \\\\
+\\midrule
+Apples & 10 & \\$2.50 \\\\
+Bananas & 6 & \\$1.80 \\\\
+Oranges & 8 & \\$3.20 \\\\
+\\bottomrule
+\\end{tabular}
+\\caption{Fruit prices}
+\\end{table}
+
+\\end{document}`,
+
+    letter: `\\documentclass{letter}
+\\begin{document}
+\\begin{letter}{Recipient Name\\\\
+Recipient Address\\\\
+City, State ZIP}
+
+\\opening{Dear Sir or Madam,}
+
+This is the body of the letter. Write your message here.
+
+\\closing{Sincerely,}
+\\signature{Your Name}
+\\end{letter}
+\\end{document}`
+};
+
+// Global variables
+let monacoEditor = null;
+let currentPreviewMode = 'math'; // 'math' or 'compilation'
+let mathPreviewTimeout = null;
+
+// Initialize editor and components
+document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
+    const latexCodeTextarea = document.getElementById('latexCode');
+    const generateBtn = document.getElementById('generateBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const refreshPreview = document.getElementById('refreshPreview');
+    const generateAIBtn = document.getElementById('generateAIBtn');
+    const aiPrompt = document.getElementById('aiPrompt');
+    const previewModeToggle = document.getElementById('previewModeToggle');
+    const compilePDF = document.getElementById('compilePDF');
+    const togglePreviewMode = document.getElementById('togglePreviewMode');
+
+    // Initialize Editor (using textarea for reliability)
+    initializeEditor();
+
+    // Simple Editor initialization
+    function initializeEditor() {
+        // Show textarea editor
+        latexCodeTextarea.classList.remove('d-none');
+        
+        // Hide Monaco editor container
+        document.getElementById('monacoEditor').style.display = 'none';
+        
+        // Set default content
+        latexCodeTextarea.value = `\\documentclass{article}
+\\usepackage{amsmath, amssymb}
+\\begin{document}
+\\title{LaTeX Document with Real-time Math Preview}
+\\author{Your Name}
+\\date{\\today}
+\\maketitle
+
+\\section{Introduction}
+This editor provides real-time math rendering using MathJax.
+
+\\section{Mathematics}
+Inline math: $E = mc^2$ and $\\pi \\approx 3.14159$
+
+Display math:
+\\[x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\]
+
+\\section{More Examples}
+Matrix equation:
+\\[
+\\begin{bmatrix}
+a & b \\\\
+c & d
+\\end{bmatrix}
+\\begin{bmatrix}
+x \\\\
+y
+\\end{bmatrix}
+=
+\\begin{bmatrix}
+ax + by \\\\
+cx + dy
+\\end{bmatrix}
+\\]
+
+\\end{document}`;
+
+        // Add change listener for real-time preview
+        latexCodeTextarea.addEventListener('input', function() {
+            clearTimeout(mathPreviewTimeout);
+            mathPreviewTimeout = setTimeout(() => {
+                if (currentPreviewMode === 'math') {
+                    updateMathPreview();
+                }
+            }, 500);
+        });
+
+        // Initial preview update
+        setTimeout(() => updateMathPreview(), 1000);
+    }
+
+    // Get LaTeX code from active editor
+    function getLatexCode() {
+        return latexCodeTextarea.value;
+    }
+
+    // Set LaTeX code in active editor
+    function setLatexCode(code) {
+        latexCodeTextarea.value = code;
+    }
+
+    // Template buttons
+    document.querySelectorAll('.template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const template = this.dataset.template;
+            setLatexCode(templates[template]);
+            if (currentPreviewMode === 'math') {
+                updateMathPreview();
+            }
+        });
+    });
+
+    // Preview mode toggle
+    previewModeToggle.addEventListener('click', function() {
+        if (currentPreviewMode === 'math') {
+            currentPreviewMode = 'compilation';
+            this.innerHTML = '<i class="fas fa-square-root-alt"></i> Math Preview';
+            document.getElementById('mathPreviewContent').classList.add('d-none');
+            document.getElementById('compilationContent').classList.remove('d-none');
+        } else {
+            currentPreviewMode = 'math';
+            this.innerHTML = '<i class="fas fa-magic"></i> Math Preview';
+            document.getElementById('mathPreviewContent').classList.remove('d-none');
+            document.getElementById('compilationContent').classList.add('d-none');
+            updateMathPreview();
+        }
+    });
+
+    // Manual PDF compilation
+    compilePDF.addEventListener('click', function() {
+        currentPreviewMode = 'compilation';
+        previewModeToggle.innerHTML = '<i class="fas fa-square-root-alt"></i> Math Preview';
+        document.getElementById('mathPreviewContent').classList.add('d-none');
+        document.getElementById('compilationContent').classList.remove('d-none');
+        updateCompilationPreview();
+    });
+
+    // Manual refresh
+    refreshPreview.addEventListener('click', function() {
+        if (currentPreviewMode === 'math') {
+            updateMathPreview();
+        } else {
+            updateCompilationPreview();
+        }
+    });
+
+    // Clear editor
+    clearBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear the editor?')) {
+            setLatexCode('');
+            document.getElementById('mathPreviewContent').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-square-root-alt fa-3x mb-3"></i>
+                    <p>Real-time math preview will appear here</p>
+                    <small>Start typing LaTeX math expressions to see them rendered</small>
+                </div>`;
+            document.getElementById('compilationContent').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-file-pdf fa-3x mb-3"></i>
+                    <p>PDF compilation results will appear here</p>
+                    <small>Click "Compile PDF" to test your complete LaTeX document</small>
+                </div>`;
+        }
+    });
+
+    // AI Generation
+    generateBtn.addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('aiPromptModal'));
+        modal.show();
+    });
+
+    generateAIBtn.addEventListener('click', async function() {
+        const prompt = aiPrompt.value.trim();
+        if (!prompt) {
+            alert('Please enter a description for what you want to generate.');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+        try {
+            const response = await fetch('/generate-latex', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await response.json();
+
+            if (data.latex_code) {
+                setLatexCode(data.latex_code);
+                if (currentPreviewMode === 'math') {
+                    updateMathPreview();
+                }
+                bootstrap.Modal.getInstance(document.getElementById('aiPromptModal')).hide();
+                aiPrompt.value = '';
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate LaTeX'));
+            }
+        } catch (error) {
+            alert('Error generating LaTeX: ' + error.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-magic"></i> Generate';
+        }
+    });
+
+    // Download functionality - now with real PDF compilation
+    downloadBtn.addEventListener('click', async function() {
+        const code = getLatexCode().trim();
+        if (!code) {
+            alert('Please enter some LaTeX code before downloading.');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compiling...';
+
+        try {
+            // Create a form and submit it to trigger PDF download
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/latexeditor';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'latex_code';
+            input.value = code;
+
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+        } catch (error) {
+            alert('Error downloading PDF: ' + error.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+        }
+    });
+
+    // MathJax real-time preview function
+    function updateMathPreview() {
+        const code = getLatexCode().trim();
+        const mathPreviewContent = document.getElementById('mathPreviewContent');
+
+        if (!code) {
+            mathPreviewContent.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-square-root-alt fa-3x mb-3"></i>
+                    <p>Real-time math preview will appear here</p>
+                    <small>Start typing LaTeX math expressions to see them rendered</small>
+                </div>`;
+            return;
+        }
+
+        // Extract and render math expressions and basic text
+        let renderedContent = processLatexForPreview(code);
+        
+        mathPreviewContent.innerHTML = `
+            <div class="latex-document">
+                ${renderedContent}
+            </div>`;
+
+        // Re-render MathJax
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            MathJax.typesetPromise([mathPreviewContent]).catch((err) => {
+                console.log('MathJax rendering error:', err);
+            });
+        }
+    }
+
+    // Process LaTeX content for MathJax preview
+    function processLatexForPreview(latex) {
+        // Remove document class and packages
+        let content = latex.replace(/\\documentclass\{[^}]*\}/g, '');
+        content = content.replace(/\\usepackage(\[[^\]]*\])?\{[^}]*\}/g, '');
+        content = content.replace(/\\begin\{document\}/g, '');
+        content = content.replace(/\\end\{document\}/g, '');
+
+        // Process title, author, date
+        content = content.replace(/\\title\{([^}]*)\}/g, '<h1 class="text-center">$1</h1>');
+        content = content.replace(/\\author\{([^}]*)\}/g, '<p class="text-center"><strong>$1</strong></p>');
+        content = content.replace(/\\date\{([^}]*)\}/g, '<p class="text-center text-muted">$1</p>');
+        content = content.replace(/\\maketitle/g, '');
+
+        // Process sections
+        content = content.replace(/\\section\{([^}]*)\}/g, '<h2>$1</h2>');
+        content = content.replace(/\\subsection\{([^}]*)\}/g, '<h3>$1</h3>');
+        content = content.replace(/\\subsubsection\{([^}]*)\}/g, '<h4>$1</h4>');
+
+        // Process text formatting
+        content = content.replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>');
+        content = content.replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>');
+        content = content.replace(/\\emph\{([^}]*)\}/g, '<em>$1</em>');
+
+        // Process line breaks
+        content = content.replace(/\\\\\s*/g, '<br>');
+        content = content.replace(/\\newline/g, '<br>');
+
+        // Process paragraphs (double newlines)
+        content = content.replace(/\n\s*\n/g, '</p><p>');
+        content = '<p>' + content + '</p>';
+
+        // Clean up empty paragraphs
+        content = content.replace(/<p>\s*<\/p>/g, '');
+        content = content.replace(/<p>\s*(<h[1-6])/g, '$1');
+        content = content.replace(/(<\/h[1-6]>)\s*<\/p>/g, '$1');
+
+        // Handle comments
+        content = content.replace(/%.*$/gm, '');
+
+        return content;
+    }
+
+    // PDF compilation preview function
+    async function updateCompilationPreview() {
+        const code = getLatexCode().trim();
+        const compilationContent = document.getElementById('compilationContent');
+
+        if (!code) {
+            compilationContent.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-file-pdf fa-3x mb-3"></i>
+                    <p>PDF compilation results will appear here</p>
+                    <small>Click "Compile PDF" to test your complete LaTeX document</small>
+                </div>`;
+            return;
+        }
+
+        // Show loading
+        document.getElementById('loadingIndicator').classList.remove('d-none');
+        compilationContent.innerHTML = '';
+
+        try {
+            const response = await fetch('/compile-latex', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ latex_code: code })
+            });
+
+            const result = await response.json();
+
+            // Hide loading
+            document.getElementById('loadingIndicator').classList.add('d-none');
+
+            if (result.success) {
+                compilationContent.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> Compilation Successful!</h5>
+                        <p>${result.message}</p>
+                        ${result.log ? `<hr><small><strong>Log:</strong><br>${result.log}</small>` : ''}
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-file-pdf fa-3x text-success mb-3"></i>
+                        <h5>Your LaTeX document is ready!</h5>
+                        <p class="text-muted">Use the "Download PDF" button to get your compiled document.</p>
+                    </div>`;
+            } else {
+                compilationContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Compilation Failed</h5>
+                        <p><strong>Error:</strong> ${result.error}</p>
+                        ${result.details ? `<hr><small><strong>Details:</strong><br><pre>${result.details}</pre></small>` : ''}
+                        ${result.log ? `<hr><small><strong>Log:</strong><br><pre>${result.log}</pre></small>` : ''}
+                    </div>
+                    <div class="mt-3">
+                        <h6>Common fixes:</h6>
+                        <ul class="small">
+                            <li>Check for typos in LaTeX commands</li>
+                            <li>Ensure all environments are properly closed (\\begin{} ... \\end{})</li>
+                            <li>Make sure required packages are included</li>
+                            <li>Verify mathematical expressions are correctly formatted</li>
+                        </ul>
+                    </div>`;
+            }
+
+        } catch (error) {
+            // Hide loading
+            document.getElementById('loadingIndicator').classList.add('d-none');
+
+            compilationContent.innerHTML = `
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-circle"></i> Preview Unavailable</h5>
+                    <p>Unable to compile LaTeX: ${error.message}</p>
+                    <hr>
+                    <small>
+                        <strong>Note:</strong> LaTeX compilation requires pdflatex to be installed on the server.
+                        You can still generate and edit LaTeX code, then download it to compile locally.
+                    </small>
+                </div>`;
+        }
+    }
+});
+</script>
+
+<style>
+.latex-preview {
+    font-family: 'Times New Roman', serif;
+    line-height: 1.6;
+}
+
+.latex-document {
+    font-family: 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 16px;
+    color: #333;
+    padding: 20px;
+}
+
+.latex-document h1 {
+    font-size: 2.2em;
+    margin: 0.5em 0;
+    font-weight: bold;
+}
+
+.latex-document h2 {
+    font-size: 1.8em;
+    margin: 1em 0 0.5em 0;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.3em;
+}
+
+.latex-document h3 {
+    font-size: 1.4em;
+    margin: 0.8em 0 0.4em 0;
+    font-weight: bold;
+}
+
+.latex-document h4 {
+    font-size: 1.2em;
+    margin: 0.6em 0 0.3em 0;
+    font-weight: bold;
+}
+
+.latex-document p {
+    margin: 1em 0;
+    text-align: justify;
+}
+
+.latex-document .MathJax {
+    font-size: 1.1em !important;
+}
+
+#latexCode {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.template-btn {
+    font-size: 0.9rem;
+}
+
+#previewPanel {
+    border-left: 1px solid #dee2e6;
+}
+
+#monacoEditor {
+    border: none;
+}
+
+.monaco-editor {
+    border-radius: 0;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .latex-document {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .latex-document h1 {
+        font-size: 1.8em;
+    }
+    
+    .latex-document h2 {
+        font-size: 1.5em;
+    }
+}
+</style>
+{% endblock %}
